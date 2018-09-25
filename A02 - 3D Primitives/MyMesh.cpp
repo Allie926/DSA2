@@ -447,36 +447,36 @@ void MyMesh::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float a_fH
 
 	for (int i = 0; i < a_nSubdivisions; i++)
 	{
-		// for all subdivisions except the last, creates quads for all faces
-		if (i < a_nSubdivisions - 1)
-		{
-			// bottom face
-			AddQuad(pointsBottomOuter[i], pointsBottomInner[i], pointsBottomOuter[i + 1], pointsBottomInner[i + 1]);
+	// for all subdivisions except the last, creates quads for all faces
+	if (i < a_nSubdivisions - 1)
+	{
+		// bottom face
+		AddQuad(pointsBottomOuter[i], pointsBottomInner[i], pointsBottomOuter[i + 1], pointsBottomInner[i + 1]);
 
-			// inside face
-			AddQuad(pointsBottomInner[i + 1], pointsBottomInner[i], pointsTopInner[i + 1], pointsTopInner[i]);
+		// inside face
+		AddQuad(pointsBottomInner[i + 1], pointsBottomInner[i], pointsTopInner[i + 1], pointsTopInner[i]);
 
-			// outside face
-			AddQuad(pointsBottomOuter[i], pointsBottomOuter[i + 1], pointsTopOuter[i], pointsTopOuter[i + 1]);
+		// outside face
+		AddQuad(pointsBottomOuter[i], pointsBottomOuter[i + 1], pointsTopOuter[i], pointsTopOuter[i + 1]);
 
-			// top face
-			AddQuad(pointsTopInner[i], pointsTopOuter[i], pointsTopInner[i + 1], pointsTopOuter[i + 1]);
-		}
-		// for the last subdivision, use the first point instead of the i+1 point
-		else
-		{
-			// bottom face
-			AddQuad(pointsBottomOuter[i], pointsBottomInner[i], pointsBottomOuter[0], pointsBottomInner[0]);
+		// top face
+		AddQuad(pointsTopInner[i], pointsTopOuter[i], pointsTopInner[i + 1], pointsTopOuter[i + 1]);
+	}
+	// for the last subdivision, use the first point instead of the i+1 point
+	else
+	{
+		// bottom face
+		AddQuad(pointsBottomOuter[i], pointsBottomInner[i], pointsBottomOuter[0], pointsBottomInner[0]);
 
-			// inside face
-			AddQuad(pointsBottomInner[0], pointsBottomInner[i], pointsTopInner[0], pointsTopInner[i]);
+		// inside face
+		AddQuad(pointsBottomInner[0], pointsBottomInner[i], pointsTopInner[0], pointsTopInner[i]);
 
-			// outside face
-			AddQuad(pointsBottomOuter[i], pointsBottomOuter[0], pointsTopOuter[i], pointsTopOuter[0]);
+		// outside face
+		AddQuad(pointsBottomOuter[i], pointsBottomOuter[0], pointsTopOuter[i], pointsTopOuter[0]);
 
-			// top face
-			AddQuad(pointsTopInner[i], pointsTopOuter[i], pointsTopInner[0], pointsTopOuter[0]);
-		}
+		// top face
+		AddQuad(pointsTopInner[i], pointsTopOuter[i], pointsTopInner[0], pointsTopOuter[0]);
+	}
 	}
 
 	// Adding information about color
@@ -507,9 +507,62 @@ void MyMesh::GenerateTorus(float a_fOuterRadius, float a_fInnerRadius, int a_nSu
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
-	// -------------------------------
+	float a = (a_fOuterRadius - a_fInnerRadius) / 2;
+
+	float c = a_fInnerRadius + a;
+
+
+	float angle1 = (2.0f*(float)PI) / a_nSubdivisionsA; // angle around the sphere horizontally
+	float angle2 = (2.0f*(float)PI) / a_nSubdivisionsB; // angle around the sphere vertically
+
+	float currAngle1 = 0; // current horizontal angle
+	float currAngle2 = 0; // current vertical angle
+
+	vector3 points[360]; // array of points in each subdivision of the sphere
+	vector3 pointsPrev[360];
+
+	// loop for all subdivisions
+	for (int i = 0; i < a_nSubdivisionsB + 1; i++)
+	{
+		if (i != 0)
+		{
+			for (int j = 0; j < a_nSubdivisionsA; j++)
+			{
+				pointsPrev[j] = points[j];
+			}
+		}
+
+		// loop again to calculate horizontal points
+		for (int j = 0; j < a_nSubdivisionsA; j++)
+		{
+			float x = (c + a * glm::cos(currAngle2)) * glm::cos(currAngle1);
+			float y = (c + a * glm::cos(currAngle2)) * glm::sin(currAngle1);
+			float z = a * glm::sin(currAngle2);
+
+			points[j] = vector3(x, y, z);
+
+			// increment the horizontal angle
+			currAngle1 += angle1;
+		}
+
+		// increment the vertical angle
+		currAngle2 += angle2;
+
+		if (i != 0)
+		{
+			for (int j = 0; j < a_nSubdivisionsA; j++)
+			{
+				if (j < a_nSubdivisionsA - 1)
+				{
+					AddQuad(pointsPrev[j], pointsPrev[j + 1], points[j], points[j + 1]);
+				}
+				else
+				{
+					AddQuad(pointsPrev[j], pointsPrev[0], points[j], points[0]);
+				}
+			}
+		}
+	}
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
