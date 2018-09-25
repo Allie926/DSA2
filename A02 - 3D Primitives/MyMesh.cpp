@@ -275,9 +275,48 @@ void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions,
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
-	// -------------------------------
+	vector3 center = vector3(0, 0, -a_fHeight / 2); // point of center of base of cone
+	vector3 top = vector3(0, 0, a_fHeight / 2); // point of tip of cone
+
+	vector3 points[360]; // points on the base of the cone
+
+	float angle = (2.0f*(float)PI) / a_nSubdivisions;
+	float currAngle = 0;
+
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		// calculate the x and y values of the point on the circle
+		float x = glm::cos(currAngle) * a_fRadius;
+		float y = glm::sin(currAngle) * a_fRadius;
+
+		// add the point vector to points
+		points[i] = vector3(x, y, -a_fHeight / 2);
+
+		// increment the current angle by the angle between each point
+		currAngle += angle;
+	}
+
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		// for all subdivisions except the last, creates tris using the current point and next point
+		if (i < a_nSubdivisions - 1)
+		{
+			// creates the tri for the two points and the top of the cone
+			AddTri(points[i], points[i + 1], top);
+
+			// creates the tri for the two points and the center of the base
+			AddTri(points[i], center, points[i+1]);
+		}
+		// for the last subdivision, make the third point of the tri the first point in the array
+		else
+		{
+			// creates the tri for the two points and the top of the cone
+			AddTri(points[i], points[0], top);
+
+			// creates the tri for the two points and the center of the base
+			AddTri(points[i], center, points[0]);
+		}
+	}
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
@@ -299,9 +338,56 @@ void MyMesh::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubdivisi
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
-	// -------------------------------
+	vector3 centerBottom = vector3(0, 0, -a_fHeight / 2); // point of center of base of cylinder
+	vector3 centerTop = vector3(0, 0, a_fHeight / 2); // point of the center of the top base of cylinder
+
+	vector3 pointsBottom[360]; // array of points on the bottom face
+	vector3 pointsTop[360]; // array of points on the top face
+
+	float angle = (2.0f*(float)PI) / a_nSubdivisions;
+	float currAngle = 0;
+
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		// calculate the x and y values of the point
+		float x = glm::cos(currAngle) * a_fRadius;
+		float y = glm::sin(currAngle) * a_fRadius;
+
+		// add the point vector to each point array
+		pointsBottom[i] = vector3(x, y, -a_fHeight / 2);
+		pointsTop[i] = vector3(x, y, a_fHeight / 2);
+
+		// increment the current angle by the angle between each point
+		currAngle += angle;
+	}
+
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		// for all subdivisions except the last, creates tris using the current point, and the next point
+		if (i < a_nSubdivisions - 1)
+		{
+			// bottom face
+			AddTri(pointsBottom[i], centerBottom, pointsBottom[i + 1]);
+
+			// side faces
+			AddQuad(pointsBottom[i], pointsBottom[i + 1], pointsTop[i], pointsTop[i + 1]);
+
+			// top face
+			AddTri(pointsTop[i], pointsTop[i + 1], centerTop);
+		}
+		// for the last subdivision, make the third point of the tri the first point in the array
+		else
+		{
+			// bottom face
+			AddTri(pointsBottom[i], centerBottom, pointsBottom[0]);
+
+			// side faces
+			AddQuad(pointsBottom[i], pointsBottom[0], pointsTop[i], pointsTop[0]);
+
+			// top face
+			AddTri(pointsTop[i], pointsTop[0], centerTop);
+		}
+	}
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
@@ -329,9 +415,69 @@ void MyMesh::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float a_fH
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
-	// -------------------------------
+	vector3 pointsBottomInner[360]; // array of vectors on the bottom inside circle
+	vector3 pointsBottomOuter[360]; // array of vectors on the bottom outside circle
+	vector3 pointsTopInner[360]; // array of vectors on the top inside circle
+	vector3 pointsTopOuter[360]; // array of vectors on the top outside circle
+
+	float angle = (2.0f*(float)PI) / a_nSubdivisions;
+	float currAngle = 0;
+
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		// calculate the x and y values of the inner radius points
+		float xInner = glm::cos(currAngle) * a_fInnerRadius;
+		float yInner = glm::sin(currAngle) * a_fInnerRadius;
+
+		// calculate the x and y values of the outer radius points
+		float xOuter = glm::cos(currAngle) * a_fOuterRadius;
+		float yOuter = glm::sin(currAngle) * a_fOuterRadius;
+
+		// add the point vectors to inner points
+		pointsBottomInner[i] = vector3(xInner, yInner, -a_fHeight / 2);
+		pointsTopInner[i] = vector3(xInner, yInner, a_fHeight / 2);
+
+		// add the point vectors to outer points
+		pointsBottomOuter[i] = vector3(xOuter, yOuter, -a_fHeight / 2);
+		pointsTopOuter[i] = vector3(xOuter, yOuter, a_fHeight / 2);
+
+		// increment the current angle by the angle between each point
+		currAngle += angle;
+	}
+
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		// for all subdivisions except the last, creates quads for all faces
+		if (i < a_nSubdivisions - 1)
+		{
+			// bottom face
+			AddQuad(pointsBottomOuter[i], pointsBottomInner[i], pointsBottomOuter[i + 1], pointsBottomInner[i + 1]);
+
+			// inside face
+			AddQuad(pointsBottomInner[i + 1], pointsBottomInner[i], pointsTopInner[i + 1], pointsTopInner[i]);
+
+			// outside face
+			AddQuad(pointsBottomOuter[i], pointsBottomOuter[i + 1], pointsTopOuter[i], pointsTopOuter[i + 1]);
+
+			// top face
+			AddQuad(pointsTopInner[i], pointsTopOuter[i], pointsTopInner[i + 1], pointsTopOuter[i + 1]);
+		}
+		// for the last subdivision, use the first point instead of the i+1 point
+		else
+		{
+			// bottom face
+			AddQuad(pointsBottomOuter[i], pointsBottomInner[i], pointsBottomOuter[0], pointsBottomInner[0]);
+
+			// inside face
+			AddQuad(pointsBottomInner[0], pointsBottomInner[i], pointsTopInner[0], pointsTopInner[i]);
+
+			// outside face
+			AddQuad(pointsBottomOuter[i], pointsBottomOuter[0], pointsTopOuter[i], pointsTopOuter[0]);
+
+			// top face
+			AddQuad(pointsTopInner[i], pointsTopOuter[i], pointsTopInner[0], pointsTopOuter[0]);
+		}
+	}
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
@@ -380,15 +526,105 @@ void MyMesh::GenerateSphere(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 		GenerateCube(a_fRadius * 2.0f, a_v3Color);
 		return;
 	}
-	if (a_nSubdivisions > 6)
-		a_nSubdivisions = 6;
+	if (a_nSubdivisions > 10)
+		a_nSubdivisions = 10;
 
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
-	// -------------------------------
+	float angle1 = (2.0f*(float)PI) / a_nSubdivisions; // angle around the sphere horizontally
+	float angle2 = (float)PI / a_nSubdivisions; // angle around the sphere vertically
+
+	float currAngle1 = 0; // current horizontal angle
+	float currAngle2 = angle2; // current vertical angle
+
+	vector3 points[10]; // array of points in each subdivision of the sphere
+	vector3 pointsPrev[10]; // array of previous points calculated in each subdivision of the sphere
+	vector3 top = vector3(0, 0, a_fRadius); // vector of the top point of the sphere
+	vector3 bottom = vector3(0, 0, -a_fRadius); // vector of the bottom point of the sphere
+
+	// loop for all subdivisions
+	for (int i = 0; i < a_nSubdivisions; i++)
+	{
+		// loop again to calculate horizontal points
+		for (int j = 0; j < a_nSubdivisions; j++)
+		{
+			// don't calculate previous points for the first subdivision
+			if (i != 0)
+			{
+				pointsPrev[j] = points[j];
+			}
+
+			// don't calculate the current point for the last subdivision (the bottom point)
+			if (i != a_nSubdivisions - 1)
+			{
+				// calculate each point horizontally around the sphere
+				float x = glm::sin(currAngle2) * glm::cos(currAngle1);
+				float y = glm::sin(currAngle2) * glm::sin(currAngle1);
+				float z = glm::cos(currAngle2);
+
+				points[j] = vector3(x, y, z) * a_fRadius;
+			}
+			
+			// increment the horizontal angle
+			currAngle1 += angle1;
+		}
+
+		// increment the vertical angle
+		currAngle2 += angle2;
+
+		// loop to add tris/quads for the sphere faces
+		for (int j = 0; j < a_nSubdivisions; j++)
+		{
+			// for the top of the sphere, use tris
+			if (i == 0)
+			{
+				// if not at the last subdivision, create a tri using the current point, the next point, and the top
+				if (j < a_nSubdivisions - 1)
+				{
+					AddTri(points[j], points[j + 1], top);
+				}
+				// if at the last subdivision, create a tri using the current point, the first point, and the top
+				else
+				{
+					AddTri(points[j], points[0], top);
+				}
+			}
+			// for the middle of sphere, use quads
+			else if (i > 0 && i < a_nSubdivisions - 1)
+			{
+				// if not at the last subdivision, create a quad using the current point, the next point,
+				// the current index of previous points, and the next index of previous points
+				if (j < a_nSubdivisions - 1)
+				{
+					AddQuad(points[j], points[j + 1], pointsPrev[j], pointsPrev[j + 1]);
+				}
+				// if at the last subdivision, create a quad using the current point, the first point,
+				// the current index of previous points, and the first index of previous points
+				else
+				{
+					AddQuad(points[j], points[0], pointsPrev[j], pointsPrev[0]);
+				}
+			}
+			// for the bottom of the sphere, use tris
+			else
+			{
+				// if not at the last subdivision, create a tri using the current index of previous points, 
+				// the next index of previous points, and the bottom
+				if (j < a_nSubdivisions - 1)
+				{
+					AddTri(pointsPrev[j], bottom, pointsPrev[j+1]);
+				}
+				// if at the last subdivision, create a tri using the current index of previous points, 
+				// the first index of previous points, and the bottom
+				else
+				{
+					AddTri(pointsPrev[j], bottom, pointsPrev[0]);
+				}
+			}
+		}
+		
+	}
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
