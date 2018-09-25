@@ -512,18 +512,19 @@ void MyMesh::GenerateTorus(float a_fOuterRadius, float a_fInnerRadius, int a_nSu
 	float c = a_fInnerRadius + a;
 
 
-	float angle1 = (2.0f*(float)PI) / a_nSubdivisionsA; // angle around the sphere horizontally
-	float angle2 = (2.0f*(float)PI) / a_nSubdivisionsB; // angle around the sphere vertically
+	float angle1 = (2.0f*(float)PI) / a_nSubdivisionsA; // angle around the tube circle
+	float angle2 = (2.0f*(float)PI) / a_nSubdivisionsB; // angle around the whole torus
 
-	float currAngle1 = 0; // current horizontal angle
-	float currAngle2 = 0; // current vertical angle
+	float currAngle1 = 0; // current tube angle
+	float currAngle2 = 0; // current torus angle
 
-	vector3 points[360]; // array of points in each subdivision of the sphere
-	vector3 pointsPrev[360];
+	vector3 points[360]; // array of points in each subdivision of the tube
+	vector3 pointsPrev[360]; // array of previous points in each subdivision of the tube
 
-	// loop for all subdivisions
+	// loop for all subdivisions + 1
 	for (int i = 0; i < a_nSubdivisionsB + 1; i++)
 	{
+		// populate the previous points array for every index past the first
 		if (i != 0)
 		{
 			for (int j = 0; j < a_nSubdivisionsA; j++)
@@ -532,7 +533,7 @@ void MyMesh::GenerateTorus(float a_fOuterRadius, float a_fInnerRadius, int a_nSu
 			}
 		}
 
-		// loop again to calculate horizontal points
+		// loop again to calculate tube points
 		for (int j = 0; j < a_nSubdivisionsA; j++)
 		{
 			float x = (c + a * glm::cos(currAngle2)) * glm::cos(currAngle1);
@@ -541,21 +542,27 @@ void MyMesh::GenerateTorus(float a_fOuterRadius, float a_fInnerRadius, int a_nSu
 
 			points[j] = vector3(x, y, z);
 
-			// increment the horizontal angle
+			// increment the tube angle
 			currAngle1 += angle1;
 		}
 
-		// increment the vertical angle
+		// increment the torus angle
 		currAngle2 += angle2;
 
+		// for all indices except the first
 		if (i != 0)
 		{
+			// loop to draw quads
 			for (int j = 0; j < a_nSubdivisionsA; j++)
 			{
+				// if not at the last subdivision, create a quad using the current index previous point, the next index previous point,
+				// the current point, and the next point
 				if (j < a_nSubdivisionsA - 1)
 				{
 					AddQuad(pointsPrev[j], pointsPrev[j + 1], points[j], points[j + 1]);
 				}
+				// if not at the last subdivision, create a quad using the current index previous point, the first index previous point,
+				// the current point, and the first point
 				else
 				{
 					AddQuad(pointsPrev[j], pointsPrev[0], points[j], points[0]);
