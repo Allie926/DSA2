@@ -1,2 +1,2 @@
-# Simplex_2178
-Repository for DSA2 Summer 2017
+# Data Structures and Algorithms 2
+Repository for DSA2 Fall 2018
