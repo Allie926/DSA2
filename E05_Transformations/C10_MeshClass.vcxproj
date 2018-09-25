@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{C76AC833-06E7-4E6A-A097-83568F4930BE}</ProjectGuid>
+    <ProjectGuid>{CBD54097-DCBE-4DB9-B8B6-C313C1E091D6}</ProjectGuid>
     <RootNamespace>C10_MeshClass</RootNamespace>
-    <ProjectName>C10_MeshClass</ProjectName>
+    <ProjectName>E05 - Transformations</ProjectName>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
