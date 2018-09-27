@@ -57,9 +57,26 @@ void Application::Display(void)
 
 
 
-
 	//your code goes here
 	v3CurrentPos = vector3(0.0f, 0.0f, 0.0f);
+
+	static float percent = 0.0f;
+	static int point = 0;
+
+	int size = m_stopsList.size;
+	
+	static vector3 startPoint = m_stopsList[point % size];
+	static vector3 endPoint = m_stopsList[(point + 1) % size];
+	
+	v3CurrentPos = glm::lerp(startPoint, endPoint, percent);
+	
+	if (percent >= 1.0f)
+	{
+		percent = 0;
+		point++;
+	}
+
+	percent += 0.01f;
 	//-------------------
 	
 
