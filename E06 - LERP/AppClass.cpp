@@ -60,22 +60,26 @@ void Application::Display(void)
 	//your code goes here
 	v3CurrentPos = vector3(0.0f, 0.0f, 0.0f);
 
-	static float percent = 0.0f;
-	static int point = 0;
-
-	int size = m_stopsList.size;
+	static float percent = 0.0f; // percent lerping
+	static int index = 0; // index of current point in list of stops
+	int size = m_stopsList.size(); // number of stops
 	
-	static vector3 startPoint = m_stopsList[point % size];
-	static vector3 endPoint = m_stopsList[(point + 1) % size];
+	// create the start point as the point at the current index (mod size to cycle through)
+	vector3 startPoint = m_stopsList[index % size];
+	// create the end point as the point after the current index
+	vector3 endPoint = m_stopsList[(index + 1) % size];
 	
+	// lerp from the current start point to the current end point by percent
 	v3CurrentPos = glm::lerp(startPoint, endPoint, percent);
 	
+	// when you get to the end point, reset percent and increment the index
 	if (percent >= 1.0f)
 	{
 		percent = 0;
-		point++;
+		index++;
 	}
 
+	// increment percent every call
 	percent += 0.01f;
 	//-------------------
 	
