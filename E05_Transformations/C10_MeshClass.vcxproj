@@ -14,7 +14,7 @@
     <ProjectGuid>{CBD54097-DCBE-4DB9-B8B6-C313C1E091D6}</ProjectGuid>
     <RootNamespace>C10_MeshClass</RootNamespace>
     <ProjectName>E05 - Transformations</ProjectName>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
