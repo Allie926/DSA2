@@ -416,24 +416,18 @@ void Application::ProcessKeyboard(void)
 #pragma endregion
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
 	{
-		if (fMultiplier)
-			m_v3Rotation.x -= 1.0f;
-		else
-			m_v3Rotation.x += 1.0f;
+		quaternion q1 = glm::angleAxis(0.05f, vector3(1, 0, 0));
+		m_qOrientation *= q1;
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y))
 	{
-		if (fMultiplier)
-			m_v3Rotation.y -= 1.0f;
-		else
-			m_v3Rotation.y += 1.0f;
+		quaternion q1 = glm::angleAxis(0.05f, vector3(0, 1, 0));
+		m_qOrientation *= q1;
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
 	{
-		if (fMultiplier)
-			m_v3Rotation.z -= 1.0f;
-		else
-			m_v3Rotation.z += 1.0f;
+		quaternion q1 = glm::angleAxis(0.05f, vector3(0, 0, 1));
+		m_qOrientation *= q1;
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::R))
 	{
