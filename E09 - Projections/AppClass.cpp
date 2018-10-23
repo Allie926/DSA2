@@ -3,7 +3,7 @@ using namespace Simplex;
 void Application::InitVariables(void)
 {
 	//Change this to your name and email
-	m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
+	m_sProgrammer = "Allie Sangalli - axs9711@rit.edu";
 
 	//Set the position and target of the camera
 	//(I'm at [0,0,10], looking at [0,0,0] and up is the positive Y axis)
@@ -45,6 +45,18 @@ void Application::Display(void)
 	//draw a skybox
 	m_pMeshMngr->AddSkyboxToRenderList();
 
+	matrix4 projection = m_pCameraMngr->GetProjectionMatrix();
+	matrix4 view = m_pCameraMngr->GetViewMatrix();
+
+	vector3 position = vector3(0.0f, 0.0f, 10.0f);
+	vector3 target = vector3(0.0f, 0.0f, 0.0f);
+	vector3 up = vector3(0.0f, 1.0f, 0.0f);
+
+	float fov = 45.0f;
+	float aspect = (float)m_pSystem->GetWindowWidth() / (float)m_pSystem->GetWindowHeight();
+	float fNear = 0.0001f;
+	float fFar = 1000.0f;
+
 	//calculate view and projection
 	switch (m_uProjection)
 	{
@@ -53,24 +65,32 @@ void Application::Display(void)
 		m_pCamera->ResetCamera();
 		break;
 	case 2:
-		m_pCamera->ResetCamera();
+		m_pCamera->SetPositionTargetAndUpward(vector3(0.0f, 0.0f, 10.0f), vector3(0.0f, 0.0f, 0.0f), vector3(0.0f, 1.0f, 0.0f));
 		break;
 	case 3:
-		m_pCamera->ResetCamera();
+		position = vector3(5.0f, 0.0f, 0.0f);
+		target = vector3(-5.0f, 0.0f, 0.0f);
+		up = vector3(0.0f, 0.0f, -1.0f);
 		break;
 	case 4:
-		m_pCamera->ResetCamera();
+		m_pCamera->SetPositionTargetAndUpward(vector3(0.0f, 0.0f, -15.0f), vector3(0.0f, 0.0f, 0.0f), vector3(0.0f, 1.0f, 0.0f)); //good
 		break;
 	case 5:
-		m_pCamera->ResetCamera();
+		m_pCamera->SetPositionTargetAndUpward(vector3(0.0f, 0.0f, -15.0f), vector3(0.0f, 0.0f, 0.0f), vector3(0.0f, 1.0f, 0.0f));
 		break;
 	case 6:
-		m_pCamera->ResetCamera();
+		m_pCamera->SetPositionTargetAndUpward(vector3(0.0f, 0.0f, 5.0f), vector3(0.0f, 0.0f, -50.0f), vector3(0.0f, 1.0f, 0.0f));
 		break;
 	case 7:
-		m_pCamera->ResetCamera();
+		m_pCamera->SetPositionTargetAndUpward(vector3(0.0f, 0.0f, 10.0f), vector3(0.0f, 0.0f, 0.0f), vector3(0.0f, -1.0f, 0.0f)); //good
 		break;
 	}
+
+	projection = glm::perspective(fov, aspect, fNear, fFar);
+	view = glm::lookAt(position, target, up);
+
+	m_pCameraMngr->SetProjectionMatrix(projection);
+	m_pCameraMngr->SetViewMatrix(view);
 
 	m_pCamera->CalculateProjectionMatrix();
 	m_pCamera->CalculateViewMatrix();
