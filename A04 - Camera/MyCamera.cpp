@@ -190,18 +190,31 @@ void MyCamera::MoveSideways(float a_fDistance)
 
 void MyCamera::ChangePitch(float degrees) //up down
 {
+	//if the camera is looking straight up and is about to rotate up, don't
+	if (m_v3Forward.y >= 0.95f && degrees > 0)
+		return;
+	//if the camera is looking straight down and is about to rotate down, don't
+	if (m_v3Forward.y <= -0.95f && degrees < 0)
+		return;
+
 	//rotate the target and up by degrees over the right vector
 	m_v3Target = glm::rotate(m_v3Target, degrees, m_v3Rightward);
-	m_v3Above = glm::rotate(m_v3Above, degrees, m_v3Rightward);
 
 	//reset forward, upward, and rightward vectors
 	m_v3Forward = glm::normalize(m_v3Target - m_v3Position);
 	m_v3Upward = glm::normalize(m_v3Above - m_v3Position);
 	m_v3Rightward = glm::normalize(glm::cross(m_v3Forward, m_v3Upward));
+
+	//if the camera is looking beyond up, set to minimum
+	if (m_v3Forward.y >= 0.95f)
+		m_v3Forward = vector3(m_v3Forward.x, 0.949f, m_v3Forward.z);
+	//if the camera is looking beyond down, set to minimum
+	if (m_v3Forward.y <= -0.95f)
+		m_v3Forward = vector3(m_v3Forward.x, -0.949f, m_v3Forward.z);
 }
 void MyCamera::ChangeYaw(float degrees) //left right
 {
-	//rotate the target by degrees over the upward vector
+	////rotate the target by degrees over the upward vector
 	m_v3Target = glm::rotate(m_v3Target, degrees, m_v3Upward);
 
 	//reset forward, upward, and rightward vectors
