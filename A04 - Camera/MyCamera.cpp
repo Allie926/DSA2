@@ -205,12 +205,12 @@ void MyCamera::ChangePitch(float degrees) //up down
 	m_v3Upward = glm::normalize(m_v3Above - m_v3Position);
 	m_v3Rightward = glm::normalize(glm::cross(m_v3Forward, m_v3Upward));
 
-	//if the camera is looking beyond up, set to minimum
-	if (m_v3Forward.y >= 0.95f)
-		m_v3Forward = vector3(m_v3Forward.x, 0.949f, m_v3Forward.z);
-	//if the camera is looking beyond down, set to minimum
-	if (m_v3Forward.y <= -0.95f)
-		m_v3Forward = vector3(m_v3Forward.x, -0.949f, m_v3Forward.z);
+	////if the camera is looking beyond up, set to minimum
+	//if (m_v3Forward.y >= 0.95f)
+	//	m_v3Forward = vector3(m_v3Forward.x, 0.949f, m_v3Forward.z);
+	////if the camera is looking beyond down, set to minimum
+	//if (m_v3Forward.y <= -0.95f)
+	//	m_v3Forward = vector3(m_v3Forward.x, -0.949f, m_v3Forward.z);
 }
 void MyCamera::ChangeYaw(float degrees) //left right
 {
