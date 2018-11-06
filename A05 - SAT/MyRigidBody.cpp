@@ -321,7 +321,8 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	for (int i = 0; i < 3; i++) {
 		ra = halfwidthA[i];
 		rb = halfwidthB.x * AbsR[i][0] + halfwidthB.y * AbsR[i][1] + halfwidthB.z * AbsR[i][2];
-		if (glm::abs(t[i]) > ra + rb) return 1;
+		if (glm::abs(t[i]) > ra + rb) 
+			return 1;
 	}
 
 	//NOTE: someVector[0] == someVector.x
@@ -330,54 +331,64 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	for (int i = 0; i < 3; i++) {
 		ra = halfwidthA.x * AbsR[0][i] + halfwidthA.y * AbsR[1][i] + halfwidthA.z * AbsR[2][i];
 		rb = halfwidthB[i];
-		if (glm::abs(t[0] * R[0][i] + t[1] * R[1][i] + t[2] * R[2][i]) > ra + rb) return 1;
+		if (glm::abs(t[0] * R[0][i] + t[1] * R[1][i] + t[2] * R[2][i]) > ra + rb) 
+			return 1;
 	}
 
 	// Test axis L = A0 x B0
 	ra = halfwidthA.y * AbsR[2][0] + halfwidthA.z * AbsR[1][0];
 	rb = halfwidthB.y * AbsR[0][2] + halfwidthB.z * AbsR[0][1];
-	if (glm::abs(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb) return 1;
+	if (glm::abs(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb) 
+		return 1;
 
 	// Test axis L = A0 x B1
 	ra = halfwidthA.y * AbsR[2][1] + halfwidthA.z * AbsR[1][1];
 	rb = halfwidthB.x * AbsR[0][2] + halfwidthB.z * AbsR[0][0];
-	if (glm::abs(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb) return 1;
+	if (glm::abs(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb) 
+		return 1;
 
 	// Test axis L = A0 x B2
 	ra = halfwidthA.y * AbsR[2][2] + halfwidthA.z * AbsR[1][2];
 	rb = halfwidthB.x * AbsR[0][1] + halfwidthB.y * AbsR[0][0];
-	if (glm::abs(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb) return 1;
+	if (glm::abs(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb) 
+		return 1;
 
 	// Test axis L = A1 x B0
 	ra = halfwidthA.x * AbsR[2][0] + halfwidthA.z * AbsR[0][0];
 	rb = halfwidthB.y * AbsR[1][2] + halfwidthB.z * AbsR[1][1];
 
-	if (glm::abs(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb) return 1;
+	if (glm::abs(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb) 
+		return 1;
 
 	// Test axis L = A1 x B1
 	ra = halfwidthA.x * AbsR[2][1] + halfwidthA.z * AbsR[0][1];
 	rb = halfwidthB.x * AbsR[1][2] + halfwidthB.z * AbsR[1][0];
-	if (glm::abs(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb) return 1;
+	if (glm::abs(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb) 
+		return 1;
 
 	// Test axis L = A1 x B2
 	ra = halfwidthA.x * AbsR[2][2] + halfwidthA.z * AbsR[0][2];
 	rb = halfwidthB.x * AbsR[1][1] + halfwidthB.y * AbsR[1][0];
-	if (glm::abs(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb) return 1;
+	if (glm::abs(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb) 
+		return 1;
 
 	// Test axis L = A2 x B0
 	ra = halfwidthA.x * AbsR[1][0] + halfwidthA.y * AbsR[0][0];
 	rb = halfwidthB.y * AbsR[2][2] + halfwidthB.z * AbsR[2][1];
-	if (glm::abs(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb) return 1;
+	if (glm::abs(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb) 
+		return 1;
 
 	// Test axis L = A2 x B1
 	ra = halfwidthA.x * AbsR[1][1] + halfwidthA.y * AbsR[0][1];
 	rb = halfwidthB.x * AbsR[2][2] + halfwidthB.z * AbsR[2][0];
-	if (glm::abs(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb) return 1;
+	if (glm::abs(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb) 
+		return 1;
 
 	// Test axis L = A2 x B2
 	ra = halfwidthA.x * AbsR[1][2] + halfwidthA.y * AbsR[0][2];
 	rb = halfwidthB.x * AbsR[2][1] + halfwidthB.y * AbsR[2][0];
-	if (glm::abs(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) return 1;
+	if (glm::abs(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) 
+		return 1;
 
 	//there is no axis test that separates this two objects
 	return eSATResults::SAT_NONE;
