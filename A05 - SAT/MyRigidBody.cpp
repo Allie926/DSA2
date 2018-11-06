@@ -276,606 +276,106 @@ void MyRigidBody::AddToRenderList(void)
 
 uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 {
-	//declare axes vectors
-	std::vector<vector3> axesA;
-	std::vector<vector3> axesB;
+	// set variables for this rigidbody
+	vector3 centerA = GetCenterGlobal(); //center in global space
+	vector3 halfwidthA = GetHalfWidth(); //halfwidth
+	vector3 rotAxisA[3]; //array of axes
+	rotAxisA[0] = m_m4ToWorld[0]; //x-axis
+	rotAxisA[1] = m_m4ToWorld[1]; //y-axis
+	rotAxisA[2] = m_m4ToWorld[2]; //z-axis
 
-	//set min and max of this rigidbody
-	vector3 minA = GetMinGlobal();
-	vector3 maxA = GetMaxGlobal();
+	// set variables for other rigidbody
+	vector3 centerB = a_pOther->GetCenterGlobal(); //center in global space
+	vector3 halfwidthB = a_pOther->GetHalfWidth(); //halfwidth
+	vector3 rotAxisB[3]; //array of axes
+	rotAxisB[0] = a_pOther->m_m4ToWorld[0]; //x-axis
+	rotAxisB[1] = a_pOther->m_m4ToWorld[1]; //y-axis
+	rotAxisB[2] = a_pOther->m_m4ToWorld[2]; //z-axis
 
-	//set min and max of the other rigidbody
-	vector3 minB = a_pOther->GetMinGlobal();
-	vector3 maxB = a_pOther->GetMaxGlobal();
+	float ra, rb;
+	matrix3 R, AbsR;
 
-	//get face normals for A
-	vector3 centerA = GetCenterGlobal();
-	axesA.push_back(glm::normalize(vector3(maxA.x, centerA.y, centerA.z)));
-	axesA.push_back(glm::normalize(vector3(centerA.x, maxA.y, centerA.z)));
-	axesA.push_back(glm::normalize(vector3(centerA.x, centerA.y, maxA.z)));
-
-	//get face normals for B
-	vector3 centerB = a_pOther->GetCenterGlobal();
-	axesB.push_back(glm::normalize(vector3(maxB.x, centerB.y, centerB.z)));
-	axesB.push_back(glm::normalize(vector3(centerB.x, maxB.y, centerB.z)));
-	axesB.push_back(glm::normalize(vector3(centerB.x, centerB.y, maxB.z)));
-
-	//get edge normals
-	std::vector<vector3> axesCross;
-	axesCross.push_back(glm::normalize(glm::cross(axesA[0], axesB[0])));
-	axesCross.push_back(glm::normalize(glm::cross(axesA[0], axesB[1])));
-	axesCross.push_back(glm::normalize(glm::cross(axesA[0], axesB[2])));
-	axesCross.push_back(glm::normalize(glm::cross(axesA[1], axesB[0])));
-	axesCross.push_back(glm::normalize(glm::cross(axesA[1], axesB[1])));
-	axesCross.push_back(glm::normalize(glm::cross(axesA[1], axesB[2])));
-	axesCross.push_back(glm::normalize(glm::cross(axesA[2], axesB[0])));
-	axesCross.push_back(glm::normalize(glm::cross(axesA[2], axesB[1])));
-	axesCross.push_back(glm::normalize(glm::cross(axesA[2], axesB[2])));
-
-	//declare projections
-	vector3 projA;
-	vector3 projB;
-
-	//declare projection floats
-	float projAmin;
-	float projAmax;
-	float projBmin;
-	float projBmax;
-
-	//Ax
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesA[0]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesA[0]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
+	// Compute rotation matrix expressing b in a's coordinate form
+	for (int i = 0; i < 3; i++)
 	{
-		float currProj = glm::dot(v3Corner[i], axesA[0]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
+		for (int j = 0; j < 3; j++)
+		{
+			R[i][j] = glm::dot(rotAxisA[i], rotAxisB[j]);
+		}
 	}
 
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesA[0]);
+	// Compute translation vector t
+	vector3 t = centerB - centerA;
+	// bring translation into a's coordinate frame
+	t = vector3(glm::dot(t, rotAxisA[0]), glm::dot(t, rotAxisA[1]), glm::dot(t, rotAxisA[2]));
 
-		if (currProj < projBmin)
-			projBmin = currProj;
+	//more stuff in book
+	// Compute common subexpressions. Add in an epsilon term to
+	// counteract arithmetic errors when two edges are parallel and
+	// their cross product is (near) null (see text for details)
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+			AbsR[i][j] = glm::abs(R[i][j]) + 0.00001f;
 
-		if (currProj > projBmax)
-			projBmax = currProj;
+	// Test axes L = A0, L = A1, L = A2
+	for (int i = 0; i < 3; i++) {
+		ra = halfwidthA[i];
+		rb = halfwidthB[0] * AbsR[i][0] + halfwidthB[1] * AbsR[i][1] + halfwidthB[2] * AbsR[i][2];
+		if (glm::abs(t[i]) > ra + rb) return 1;
 	}
 
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
+	// Test axes L = B0, L = B1, L = B2
+	for (int i = 0; i < 3; i++) {
+		ra = halfwidthA[0] * AbsR[0][i] + halfwidthA[1] * AbsR[1][i] + halfwidthA[2] * AbsR[2][i];
+		rb = halfwidthB[i];
+		if (glm::abs(t[0] * R[0][i] + t[1] * R[1][i] + t[2] * R[2][i]) > ra + rb) return 1;
 	}
 
-	//Ay
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesA[1]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesA[1]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesA[1]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesA[1]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-
-	//Az
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesA[2]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesA[2]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesA[2]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesA[2]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-
-	//Bx
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesB[0]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesB[0]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesB[0]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesB[0]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-
-	//By
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesB[1]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesB[1]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesB[1]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesB[1]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-
-	//Bz
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesB[2]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesB[2]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesB[2]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesB[2]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-	
-	//Ax X Bx
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesCross[0]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesCross[0]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesCross[0]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesCross[0]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-
-	//Ax X By
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesCross[1]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesCross[1]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesCross[1]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesCross[1]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-
-	//Ax X Bz
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesCross[2]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesCross[2]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesCross[2]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesCross[2]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-
-	//Ay X Bx
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesCross[3]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesCross[3]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesCross[3]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesCross[3]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-
-	//Ay X By
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesCross[4]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesCross[4]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesCross[4]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesCross[4]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-
-	//Ay X Bz
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesCross[5]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesCross[5]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesCross[5]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesCross[5]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-
-	//Az X Bx
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesCross[6]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesCross[6]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesCross[6]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesCross[6]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-
-	//Az X By
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesCross[7]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesCross[7]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesCross[7]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesCross[7]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
-
-	//Az X Bz
-	//set projection float initials
-	projAmin = glm::dot(v3Corner[0], axesCross[8]);
-	projAmax = projAmin;
-	projBmin = glm::dot(a_pOther->v3Corner[0], axesCross[8]);
-	projBmax = projBmin;
-
-	//find this rigidbody min and max projections
-	for (int i = 1; i < v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(v3Corner[i], axesCross[8]);
-
-		if (currProj < projAmin)
-			projAmin = currProj;
-
-		if (currProj > projAmax)
-			projAmax = currProj;
-	}
-
-	//find other rigidbody min and max projections
-	for (int i = 1; i < a_pOther->v3Corner->length(); i++)
-	{
-		float currProj = glm::dot(a_pOther->v3Corner[i], axesCross[8]);
-
-		if (currProj < projBmin)
-			projBmin = currProj;
-
-		if (currProj > projBmax)
-			projBmax = currProj;
-	}
-
-	//return if they are separated
-	if (projAmax < projBmin || projAmin > projBmax)
-	{
-		return 1;
-	}
+	// Test axis L = A0 x B0
+	ra = halfwidthA[1] * AbsR[2][0] + halfwidthA[2] * AbsR[1][0];
+	rb = halfwidthB[1] * AbsR[0][2] + halfwidthB[2] * AbsR[0][1];
+	if (glm::abs(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb) return 1;
+
+	// Test axis L = A0 x B1
+	ra = halfwidthA[1] * AbsR[2][1] + halfwidthA[2] * AbsR[1][1];
+	rb = halfwidthB[0] * AbsR[0][2] + halfwidthB[2] * AbsR[0][0];
+	if (glm::abs(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb) return 1;
+
+	// Test axis L = A0 x B2
+	ra = halfwidthA[1] * AbsR[2][2] + halfwidthA[2] * AbsR[1][2];
+	rb = halfwidthB[0] * AbsR[0][1] + halfwidthB[1] * AbsR[0][0];
+	if (glm::abs(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb) return 1;
+
+	// Test axis L = A1 x B0
+	ra = halfwidthA[0] * AbsR[2][0] + halfwidthA[2] * AbsR[0][0];
+	rb = halfwidthB[1] * AbsR[1][2] + halfwidthB[2] * AbsR[1][1];
+
+	if (glm::abs(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb) return 1;
+
+	// Test axis L = A1 x B1
+	ra = halfwidthA[0] * AbsR[2][1] + halfwidthA[2] * AbsR[0][1];
+	rb = halfwidthB[0] * AbsR[1][2] + halfwidthB[2] * AbsR[1][0];
+	if (glm::abs(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb) return 1;
+
+	// Test axis L = A1 x B2
+	ra = halfwidthA[0] * AbsR[2][2] + halfwidthA[2] * AbsR[0][2];
+	rb = halfwidthB[0] * AbsR[1][1] + halfwidthB[1] * AbsR[1][0];
+	if (glm::abs(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb) return 1;
+
+	// Test axis L = A2 x B0
+	ra = halfwidthA[0] * AbsR[1][0] + halfwidthA[1] * AbsR[0][0];
+	rb = halfwidthB[1] * AbsR[2][2] + halfwidthB[2] * AbsR[2][1];
+	if (glm::abs(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb) return 1;
+
+	// Test axis L = A2 x B1
+	ra = halfwidthA[0] * AbsR[1][1] + halfwidthA[1] * AbsR[0][1];
+	rb = halfwidthB[0] * AbsR[2][2] + halfwidthB[2] * AbsR[2][0];
+	if (glm::abs(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb) return 1;
+
+	// Test axis L = A2 x B2
+	ra = halfwidthA[0] * AbsR[1][2] + halfwidthA[1] * AbsR[0][2];
+	rb = halfwidthB[0] * AbsR[2][1] + halfwidthB[1] * AbsR[2][0];
+	if (glm::abs(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) return 1;
 
 	//there is no axis test that separates this two objects
 	return eSATResults::SAT_NONE;
