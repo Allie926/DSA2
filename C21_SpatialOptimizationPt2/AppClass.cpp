@@ -30,8 +30,8 @@ void Application::InitVariables(void)
 			m_pEntityMngr->UsePhysicsSolver(m_bUsingPhysics); //Apply physics to the objects
 		}
 	}
-	m_uOctantLevels = 1;
-	m_pRoot = new Octant(m_uOctantLevels,5);
+	m_uOctantLevels = 3;
+	m_pRoot = new Octant(m_uOctantLevels,16);
 	m_pEntityMngr->Update();
 }
 void Application::Update(void)
