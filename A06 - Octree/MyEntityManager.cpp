@@ -2,6 +2,10 @@
 using namespace Simplex;
 //  MyEntityManager
 Simplex::MyEntityManager* Simplex::MyEntityManager::m_pInstance = nullptr;
+MyEntityManager::PEntity* MyEntityManager::GetEntityArray()
+{
+	return m_mEntityArray;
+}
 void Simplex::MyEntityManager::Init(void)
 {
 	m_uEntityCount = 0;
